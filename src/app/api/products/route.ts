@@ -155,60 +155,49 @@ export async function PATCH(request: NextRequest) {
 
     if (productIndex === -1) {
       return NextResponse.json(
-    // id가 없으면 새로운 id 생성
-    if (!product.id) {
-      product.id = Date.now().toString();
+        { error: '상품을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
     }
-    
-    // 기존 상품이면 업데이트, 아니면 추가
-    const index = products.findIndex(p => p.id === product.id);
-    if (index !== -1) {
-      products[index] = product;
-    } else {
-      products.push(product);
-    }
-    
-    await saveProducts(products);
-    return NextResponse.json(product);
-  } catch (error) {
-    console.error('Failed to save product:', error);
-    return NextResponse.json({ error: 'Failed to save product' }, { status: 500 });
-  }
-}
 
-export async function PATCH(request: Request) {
-  try {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
-    const productId = pathParts[pathParts.length - 1];
-    
-    const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === productId);
-    
-    if (productIndex === -1) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-    
-    const update = await request.json();
-    products[productIndex] = { ...products[productIndex], ...update };
-    
+    products[productIndex] = {
+      ...products[productIndex],
+      ...data,
+    };
+
     await saveProducts(products);
     return NextResponse.json(products[productIndex]);
   } catch (error) {
     console.error('Failed to update product:', error);
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    return NextResponse.json(
+      { error: '상품 수정 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const { id } = await request.json();
     const products = await getProducts();
-    const filteredProducts = products.filter(product => product.id !== id);
-    await saveProducts(filteredProducts);
+    const productIndex = products.findIndex(p => p.id === id);
+
+    if (productIndex === -1) {
+      return NextResponse.json(
+        { error: '상품을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    products.splice(productIndex, 1);
+    await saveProducts(products);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete product:', error);
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    return NextResponse.json(
+      { error: '상품 삭제 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 } 
