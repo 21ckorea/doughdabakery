@@ -7,17 +7,13 @@ import Calendar from './components/Calendar';
 import ProductCard from './components/ProductCard';
 import { Holiday } from '@/types/holiday';
 import { Product } from '@/types/product';
+import { StoreStatus } from '@/types/store';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5 }
 };
-
-interface StoreStatus {
-  isOpen: boolean;
-  message: string;
-}
 
 export default function Home() {
   const [storeStatus, setStoreStatus] = useState<StoreStatus>({
@@ -47,9 +43,16 @@ export default function Home() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
-      const data = await response.json();
-      setProducts(data);
+      const response = await fetch('/api/products', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      }
     } catch (error) {
       console.error('Failed to fetch products:', error);
     }
@@ -58,8 +61,10 @@ export default function Home() {
   const fetchHolidays = async () => {
     try {
       const response = await fetch('/api/holidays');
-      const data: Holiday[] = await response.json();
-      setHolidays(data);
+      if (response.ok) {
+        const data = await response.json();
+        setHolidays(data);
+      }
     } catch (error) {
       console.error('Failed to fetch holidays:', error);
     }

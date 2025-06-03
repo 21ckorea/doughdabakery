@@ -14,6 +14,11 @@ export default function ProductCard(props: Product) {
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         )}
+        {props.isSoldOut && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <span className="text-white text-lg font-bold">품절</span>
+          </div>
+        )}
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
