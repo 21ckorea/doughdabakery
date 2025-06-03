@@ -14,6 +14,7 @@ interface Product {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -32,6 +33,7 @@ export default function ProductsPage() {
   };
 
   const handleToggleSoldOut = async (productId: string) => {
+    setIsLoading(true);
     try {
       const product = products.find(p => p.id === productId);
       if (!product) return;
@@ -47,10 +49,19 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        await fetchProducts(); // 목록 새로고침
+        const updatedProduct = await response.json();
+        setProducts(prevProducts =>
+          prevProducts.map(p =>
+            p.id === productId ? { ...p, isSoldOut: !p.isSoldOut } : p
+          )
+        );
+      } else {
+        console.error('Failed to update product:', await response.text());
       }
     } catch (error) {
       console.error('Failed to toggle sold out status:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -69,17 +80,23 @@ export default function ProductsPage() {
                 fill
                 className="object-cover rounded-lg"
               />
+              {product.isSoldOut && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">품절</span>
+                </div>
+              )}
             </div>
             <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
             <p className="text-gray-600 mb-2">{product.description}</p>
             <p className="text-lg font-bold mb-4">{product.price.toLocaleString()}원</p>
             <button
               onClick={() => handleToggleSoldOut(product.id)}
+              disabled={isLoading}
               className={`w-full py-2 px-4 rounded-lg ${
                 product.isSoldOut
-                  ? 'bg-red-500 text-white'
-                  : 'bg-green-500 text-white'
-              }`}
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-green-500 text-white hover:bg-green-600'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {product.isSoldOut ? '판매 재개' : '품절 처리'}
             </button>
