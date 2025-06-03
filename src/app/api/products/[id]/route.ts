@@ -74,26 +74,99 @@ async function saveProducts(products: Product[]) {
   }
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const products = await getProducts();
+    const product = products.find(p => p.id === params.id);
+
+    if (!product) {
+      return NextResponse.json(
+        { error: '상품을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error('Failed to get product:', error);
+    return NextResponse.json(
+      { error: '상품 조회 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const productId = params.id;
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === productId);
-    
+    const productIndex = products.findIndex(p => p.id === params.id);
+
     if (productIndex === -1) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: '상품을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
     }
-    
-    const update = await request.json();
-    products[productIndex] = { ...products[productIndex], ...update };
-    
+
+    const data = await request.json();
+    products[productIndex] = {
+      ...products[productIndex],
+      ...data,
+    };
+
     await saveProducts(products);
+
     return NextResponse.json(products[productIndex]);
   } catch (error) {
     console.error('Failed to update product:', error);
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    return NextResponse.json(
+      { error: '상품 수정 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const products = await getProducts();
+    const productIndex = products.findIndex(p => p.id === params.id);
+
+    if (productIndex === -1) {
+      return NextResponse.json(
+        { error: '상품을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 이미지 파일이 있다면 삭제
+    const product = products[productIndex];
+    if (product.image && product.image.startsWith('/uploads/')) {
+      const imagePath = path.join(process.cwd(), 'public', product.image);
+      try {
+        await fs.unlink(imagePath);
+      } catch (error) {
+        console.error('Failed to delete image file:', error);
+      }
+    }
+
+    products.splice(productIndex, 1);
+    await saveProducts(products);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete product:', error);
+    return NextResponse.json(
+      { error: '상품 삭제 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 } 
