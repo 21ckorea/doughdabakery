@@ -104,13 +104,26 @@ export default function ProductEditPage() {
         image: imageUrl
       };
 
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(product),
-      });
+      let response;
+      if (editingProduct.id) {
+        // 기존 상품 수정
+        response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(product),
+        });
+      } else {
+        // 새 상품 추가
+        response = await fetch('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(product),
+        });
+      }
 
       if (!response.ok) {
         throw new Error('Failed to save product');
