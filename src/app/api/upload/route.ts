@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     try {
       await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
+    } catch {
       // 디렉토리가 이미 존재하면 무시
     }
     
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
       url: `/uploads/${filename}`,
       success: true 
     });
-  } catch (error) {
-    console.error('Error uploading file:', error);
+  } catch (err) {
+    console.error('Error uploading file:', err);
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
   }
 } 
