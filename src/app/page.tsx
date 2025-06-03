@@ -46,7 +46,8 @@ export default function Home() {
       const response = await fetch('/api/products', {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       if (response.ok) {
@@ -56,6 +57,11 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to fetch products:', error);
     }
+  };
+
+  // 상품 목록 새로고침 함수
+  const refreshProducts = () => {
+    fetchProducts();
   };
 
   const fetchHolidays = async () => {
@@ -141,6 +147,12 @@ export default function Home() {
           className="text-3xl font-bold text-center mb-12"
         >
           오늘의 빵
+          <button
+            onClick={refreshProducts}
+            className="ml-4 px-4 py-2 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+          >
+            새로고침
+          </button>
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map(product => (
