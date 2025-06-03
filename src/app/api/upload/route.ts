@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 export async function POST(request: Request) {
   try {
@@ -10,17 +11,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    // 파일 데이터를 Buffer로 변환
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
     // 파일 이름에 타임스탬프 추가
     const timestamp = Date.now();
     const filename = `${timestamp}-${file.name}`;
     
-    // Vercel Blob에 업로드
-    const blob = await put(filename, file, {
-      access: 'public',
-    });
+    // uploads 디렉토리 생성
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      // 디렉토리가 이미 존재하면 무시
+    }
+    
+    // 파일 저장
+    const filePath = path.join(uploadDir, filename);
+    await writeFile(filePath, buffer);
     
     return NextResponse.json({ 
-      url: blob.url,
+      url: `/uploads/${filename}`,
       success: true 
     });
   } catch (error) {
