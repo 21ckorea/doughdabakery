@@ -1,7 +1,15 @@
-import { Product } from '@/types/product';
 import redis from './redis';
 
 const PRODUCTS_KEY = 'products';
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  isSoldOut?: boolean;
+}
 
 export async function getProducts(): Promise<Product[]> {
   try {
@@ -32,13 +40,14 @@ export async function getProduct(id: string): Promise<Product | null> {
   }
 }
 
-export async function addProduct(product: Product): Promise<Product> {
+export async function addProduct(product: Omit<Product, 'id'>): Promise<Product> {
   try {
     const products = await getProducts();
-    const newProduct = {
+    const newProduct: Product = {
       ...product,
-      id: Date.now().toString(), // 새 ID 생성
+      id: Date.now().toString()
     };
+    
     products.push(newProduct);
     await saveProducts(products);
     return newProduct;
@@ -55,16 +64,21 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     const index = products.findIndex((p: Product) => p.id === id);
     
     if (index === -1) return null;
-    
-    // 기존 제품 정보를 유지하면서 업데이트
-    products[index] = {
-      ...products[index],  // 기존 제품 정보 유지
-      ...updates,         // 새로운 정보로 업데이트
-      id                  // 원래 ID 유지
+
+    // 필수 필드 확인
+    const currentProduct = products[index];
+    const updatedProduct: Product = {
+      id: currentProduct.id,                    // ID는 변경 불가
+      name: updates.name || currentProduct.name, // 이름은 필수
+      price: updates.price ?? currentProduct.price, // 가격은 필수 (0일 수 있으므로 nullish 연산자 사용)
+      description: updates.description ?? currentProduct.description,
+      image: updates.image ?? currentProduct.image,
+      isSoldOut: updates.isSoldOut ?? currentProduct.isSoldOut
     };
     
+    products[index] = updatedProduct;
     await redis.set(PRODUCTS_KEY, JSON.stringify(products));
-    return products[index];
+    return updatedProduct;
   } catch (error) {
     console.error('Failed to update product in Redis:', error);
     throw error;
