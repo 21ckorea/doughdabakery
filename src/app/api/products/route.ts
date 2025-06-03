@@ -1,111 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Product } from '@/types/product';
-import { put, list } from '@vercel/blob';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getProducts, saveProducts } from '@/lib/productUtils';
 
-const dataFilePath = path.join(process.cwd(), 'src/data/products.json');
-
-// 파일 시스템에서 상품 데이터 가져오기
-async function getProductsFromFile(): Promise<Product[]> {
-  try {
-    const data = await fs.readFile(dataFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Failed to read products from file:', error);
-    return [];
-  }
-}
-
-// 파일 시스템에 상품 데이터 저장
-async function saveProductsToFile(products: Product[]) {
-  try {
-    await fs.writeFile(dataFilePath, JSON.stringify(products));
-  } catch (error) {
-    console.error('Failed to save products to file:', error);
-    throw error;
-  }
-}
-
-// Blob Storage에서 상품 데이터 가져오기
-async function getProductsFromBlob(): Promise<Product[]> {
-  try {
-    // 정확한 파일만 조회하도록 최적화
-    const { blobs } = await list({ prefix: 'products.json', limit: 1 });
-    const productsBlob = blobs.find(blob => blob.pathname === 'products.json');
-    
-    if (productsBlob) {
-      // 캐시 관련 헤더를 더 명확하게 지정
-      const response = await fetch(productsBlob.url, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-
-      if (!response.ok) {
-        console.error('Failed to fetch products blob:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('Error response text:', errorText);
-        return [];
-      }
-
-      const data = await response.json();
-      console.log('Fetched products from blob:', data); // 디버깅용 로그
-      return data;
-    }
-    return [];
-  } catch (error) {
-    console.error('Failed to get products from blob storage:', error);
-    return [];
-  }
-}
-
-// Blob Storage에 상품 데이터 저장
-async function saveProductsToBlob(products: Product[]) {
-  try {
-    console.log('Saving products to blob:', products); // 디버깅용 로그
-    await put('products.json', JSON.stringify(products), {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-      cacheControlMaxAge: 0
-    });
-  } catch (error) {
-    console.error('Failed to save products to blob storage:', error);
-    throw error;
-  }
-}
-
-// 환경에 따라 적절한 저장소 사용
-async function getProducts(): Promise<Product[]> {
-  if (process.env.VERCEL) {
-    return getProductsFromBlob();
-  } else {
-    return getProductsFromFile();
-  }
-}
-
-async function saveProducts(products: Product[]) {
-  if (process.env.VERCEL) {
-    await saveProductsToBlob(products);
-  } else {
-    await saveProductsToFile(products);
-  }
-}
-
+// 상품 목록 조회
 export async function GET() {
   try {
     const products = await getProducts();
-    const headers = {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Surrogate-Control': 'no-store'
-    };
-    return NextResponse.json(products, { headers });
+    return NextResponse.json(products, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to get products:', error);
     return NextResponse.json(
@@ -115,12 +22,12 @@ export async function GET() {
   }
 }
 
+// 새 상품 추가
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const products = await getProducts();
     
-    // 새 상품 추가
     const newProduct: Product = {
       ...data,
       id: Date.now().toString(),
@@ -142,10 +49,10 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const data = await request.json();
-    console.log('PATCH request data:', data); // 디버깅용 로그
+    console.log('PATCH request data:', data);
 
     const products = await getProducts();
-    console.log('Current products:', products); // 디버깅용 로그
+    console.log('Current products:', products);
 
     const productIndex = products.findIndex(p => p.id === data.id);
 
@@ -170,7 +77,7 @@ export async function PATCH(request: NextRequest) {
     const updatedProducts = await getProducts();
     const updatedProduct = updatedProducts.find(p => p.id === data.id);
     
-    console.log('Updated product:', updatedProduct); // 디버깅용 로그
+    console.log('Updated product:', updatedProduct);
 
     return NextResponse.json(updatedProduct, {
       headers: {
