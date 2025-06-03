@@ -30,18 +30,31 @@ async function saveProductsToFile(products: Product[]) {
 // Blob Storage에서 상품 데이터 가져오기
 async function getProductsFromBlob(): Promise<Product[]> {
   try {
-    const { blobs } = await list();
-    const productsBlob = blobs.find(blob => blob.pathname.endsWith('products.json'));
+    // 정확한 파일만 조회하도록 최적화
+    const { blobs } = await list({ prefix: 'products.json', limit: 1 });
+    const productsBlob = blobs.find(blob => blob.pathname === 'products.json');
     
     if (productsBlob) {
+      // 캐시 관련 헤더를 더 명확하게 지정
       const response = await fetch(productsBlob.url, {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
-      return await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to fetch products blob:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      console.log('Fetched products from blob:', data); // 디버깅용 로그
+      return data;
     }
     return [];
   } catch (error) {
@@ -53,6 +66,7 @@ async function getProductsFromBlob(): Promise<Product[]> {
 // Blob Storage에 상품 데이터 저장
 async function saveProductsToBlob(products: Product[]) {
   try {
+    console.log('Saving products to blob:', products); // 디버깅용 로그
     await put('products.json', JSON.stringify(products), {
       access: 'public',
       contentType: 'application/json',
@@ -128,7 +142,11 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const data = await request.json();
+    console.log('PATCH request data:', data); // 디버깅용 로그
+
     const products = await getProducts();
+    console.log('Current products:', products); // 디버깅용 로그
+
     const productIndex = products.findIndex(p => p.id === data.id);
 
     if (productIndex === -1) {
@@ -144,7 +162,23 @@ export async function PATCH(request: NextRequest) {
     };
 
     await saveProducts(products);
-    return NextResponse.json(products[productIndex]);
+    
+    // 데이터 동기화를 위한 짧은 지연
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // 저장 후 즉시 다시 조회하여 검증
+    const updatedProducts = await getProducts();
+    const updatedProduct = updatedProducts.find(p => p.id === data.id);
+    
+    console.log('Updated product:', updatedProduct); // 디버깅용 로그
+
+    return NextResponse.json(updatedProduct, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to update product:', error);
     return NextResponse.json(
