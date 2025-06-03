@@ -83,8 +83,8 @@ export default function ProductsPage() {
                 className="object-cover rounded-lg"
               />
               {product.isSoldOut && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">품절</span>
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="text-red-500 text-2xl font-bold bg-white/80 px-4 py-2 rounded-lg">품절</span>
                 </div>
               )}
             </div>

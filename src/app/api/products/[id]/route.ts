@@ -137,7 +137,13 @@ export async function DELETE(
     products.splice(productIndex, 1);
     await saveProducts(products);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to delete product:', error);
     return NextResponse.json(
