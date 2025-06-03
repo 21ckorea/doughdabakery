@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { password } = await request.json();
+    const body = await request.json();
+    console.log('Received login request:', { ...body, password: '[HIDDEN]' });
+    
     const adminPassword = process.env.ADMIN_PASSWORD;
+    console.log('Admin password is set:', !!adminPassword);
 
     if (!adminPassword) {
       console.error('ADMIN_PASSWORD environment variable is not set');
@@ -13,7 +16,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password !== adminPassword) {
+    if (!body.password) {
+      console.error('Password is missing from request');
+      return NextResponse.json(
+        { error: '비밀번호를 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    const isPasswordValid = body.password === adminPassword;
+    console.log('Password validation result:', isPasswordValid);
+
+    if (!isPasswordValid) {
       return NextResponse.json(
         { error: '비밀번호가 일치하지 않습니다.' },
         { status: 401 }
