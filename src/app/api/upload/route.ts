@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { NextRequest, NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { put } from '@vercel/blob';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -12,9 +12,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // 파일 이름에 타임스탬프 추가
-    const timestamp = Date.now();
-    const filename = `${timestamp}-${file.name}`;
+    // 파일 확장자 검사
+    const fileExtension = path.extname(file.name).toLowerCase();
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      return NextResponse.json(
+        { error: '지원하지 않는 파일 형식입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 파일 크기 제한 (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: '파일 크기가 너무 큽니다.' },
+        { status: 400 }
+      );
+    }
 
     // Vercel 환경인지 확인
     if (process.env.VERCEL) {
@@ -23,7 +39,7 @@ export async function POST(request: Request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         
-        const blob = await put(filename, buffer, {
+        const blob = await put(file.name, buffer, {
           access: 'public',
           contentType: file.type
         });
@@ -46,17 +62,18 @@ export async function POST(request: Request) {
       // uploads 디렉토리 생성
       const uploadDir = path.join(process.cwd(), 'public', 'uploads');
       try {
-        await mkdir(uploadDir, { recursive: true });
+        await fs.access(uploadDir);
       } catch {
-        // 디렉토리가 이미 존재하면 무시
+        await fs.mkdir(uploadDir, { recursive: true });
       }
       
       // 파일 저장
-      const filePath = path.join(uploadDir, filename);
-      await writeFile(filePath, buffer);
+      const fileName = `${Date.now()}-${file.name}`;
+      const filePath = path.join(uploadDir, fileName);
+      await fs.writeFile(filePath, buffer);
       
       return NextResponse.json({ 
-        url: `/uploads/${filename}`,
+        url: `/uploads/${fileName}`,
         success: true 
       });
     }

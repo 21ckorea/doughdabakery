@@ -82,11 +82,11 @@ type RouteContext = {
 
 export async function GET(
   request: NextRequest,
-  context: RouteContext
+  { params }: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const product = products.find(p => p.id === context.params.id);
+    const product = products.find(p => p.id === params.id);
 
     if (!product) {
       return NextResponse.json(
@@ -107,11 +107,11 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: RouteContext
+  { params }: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(
@@ -140,11 +140,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: RouteContext
+  { params }: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Product } from '@/types/product';
 import { put, list } from '@vercel/blob';
 import { promises as fs } from 'fs';
@@ -45,19 +45,11 @@ const dataFilePath = path.join(process.cwd(), 'src/data/products.json');
 // 파일 시스템에서 상품 데이터 가져오기
 async function getProductsFromFile(): Promise<Product[]> {
   try {
-    // 파일이 없으면 생성
-    try {
-      await fs.access(dataFilePath);
-    } catch {
-      await fs.writeFile(dataFilePath, JSON.stringify(initialProducts));
-      return initialProducts;
-    }
-
     const data = await fs.readFile(dataFilePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
     console.error('Failed to read products from file:', error);
-    return initialProducts;
+    return [];
   }
 }
 
@@ -80,13 +72,11 @@ async function getProductsFromBlob(): Promise<Product[]> {
     if (productsBlob) {
       const response = await fetch(productsBlob.url);
       return await response.json();
-    } else {
-      await saveProductsToBlob(initialProducts);
-      return initialProducts;
     }
+    return [];
   } catch (error) {
     console.error('Failed to get products from blob storage:', error);
-    return initialProducts;
+    return [];
   }
 }
 
@@ -125,16 +115,46 @@ export async function GET() {
     const products = await getProducts();
     return NextResponse.json(products);
   } catch (error) {
-    console.error('Failed to read products:', error);
-    return NextResponse.json([]);
+    console.error('Failed to get products:', error);
+    return NextResponse.json(
+      { error: '상품 목록을 가져오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const product: Product = await request.json();
+    const data = await request.json();
     const products = await getProducts();
     
+    // 새 상품 추가
+    const newProduct: Product = {
+      ...data,
+      id: Date.now().toString(),
+    };
+
+    products.push(newProduct);
+    await saveProducts(products);
+
+    return NextResponse.json(newProduct);
+  } catch (error) {
+    console.error('Failed to create product:', error);
+    return NextResponse.json(
+      { error: '상품 생성 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const data = await request.json();
+    const products = await getProducts();
+    const productIndex = products.findIndex(p => p.id === data.id);
+
+    if (productIndex === -1) {
+      return NextResponse.json(
     // id가 없으면 새로운 id 생성
     if (!product.id) {
       product.id = Date.now().toString();

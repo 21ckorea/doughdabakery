@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { StoreStatus } from '@/types/store';
 
 // 메모리에 상태 저장 (서버리스 환경 대응)
@@ -8,18 +8,24 @@ export async function GET() {
   try {
     return NextResponse.json(storeStatus);
   } catch (error) {
-    console.error('Failed to read store status:', error);
-    return NextResponse.json({ isOpen: true });
+    console.error('Failed to get store status:', error);
+    return NextResponse.json(
+      { error: '영업 상태를 가져오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const newStatus: StoreStatus = await request.json();
-    storeStatus = newStatus;
-    return NextResponse.json(storeStatus);
+    const data = await request.json();
+    storeStatus = { ...storeStatus, ...data };
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to update store status:', error);
-    return NextResponse.json({ error: 'Failed to update store status' }, { status: 500 });
+    return NextResponse.json(
+      { error: '영업 상태 수정 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 } 
