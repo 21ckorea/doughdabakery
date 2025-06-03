@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Product } from '@/types/product';
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -153,14 +153,31 @@ export async function DELETE(
       );
     }
 
-    // 이미지 파일이 있다면 삭제
-    const product = products[productIndex];
-    if (product.image && product.image.startsWith('/uploads/')) {
-      const imagePath = path.join(process.cwd(), 'public', product.image);
-      try {
-        await fs.unlink(imagePath);
-      } catch (error) {
-        console.error('Failed to delete image file:', error);
+    const productToDelete = products[productIndex];
+
+    // 이미지 삭제 처리
+    if (productToDelete.image) {
+      if (process.env.VERCEL) {
+        // Vercel 환경: Blob Storage에서 이미지 삭제
+        try {
+          if (productToDelete.image.includes('blob.vercel-storage.com')) {
+            await del(productToDelete.image);
+            console.log('Image deleted from Blob Storage:', productToDelete.image);
+          }
+        } catch (error) {
+          console.error('Failed to delete image from blob storage:', error);
+        }
+      } else {
+        // 로컬 환경: 파일 시스템에서 이미지 삭제
+        if (productToDelete.image.startsWith('/uploads/')) {
+          const imagePath = path.join(process.cwd(), 'public', productToDelete.image);
+          try {
+            await fs.unlink(imagePath);
+            console.log('Local image file deleted:', imagePath);
+          } catch (error) {
+            console.error('Failed to delete local image file:', error);
+          }
+        }
       }
     }
 
