@@ -75,8 +75,14 @@ export default function ProductManagement() {
     try {
       let imageUrl = editingProduct.image;
 
+      // 새 이미지가 선택된 경우에만 업로드
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
+      } else if (!imageUrl) {
+        // 이미지가 선택되지 않았고, 기존 이미지도 없는 경우
+        alert('이미지를 선택해주세요.');
+        setIsUploading(false);
+        return;
       }
 
       const product = {
@@ -84,7 +90,7 @@ export default function ProductManagement() {
         image: imageUrl
       };
 
-      await fetch('/api/products', {
+      const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,10 +98,15 @@ export default function ProductManagement() {
         body: JSON.stringify(product),
       });
 
-      fetchProducts();
+      if (!response.ok) {
+        throw new Error('Failed to save product');
+      }
+
+      await fetchProducts();
       resetForm();
     } catch (error) {
       console.error('Failed to save product:', error);
+      alert('상품 저장에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
