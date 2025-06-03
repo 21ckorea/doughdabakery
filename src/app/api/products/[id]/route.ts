@@ -34,7 +34,12 @@ async function getProductsFromBlob(): Promise<Product[]> {
     const productsBlob = blobs.find(blob => blob.pathname.endsWith('products.json'));
     
     if (productsBlob) {
-      const response = await fetch(productsBlob.url);
+      const response = await fetch(productsBlob.url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       return await response.json();
     }
     return [];
@@ -49,7 +54,9 @@ async function saveProductsToBlob(products: Product[]) {
   try {
     await put('products.json', JSON.stringify(products), {
       access: 'public',
-      contentType: 'application/json'
+      contentType: 'application/json',
+      addRandomSuffix: false,
+      cacheControlMaxAge: 0
     });
   } catch (error) {
     console.error('Failed to save products to blob storage:', error);

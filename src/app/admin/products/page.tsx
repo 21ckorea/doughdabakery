@@ -22,7 +22,12 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -42,6 +47,7 @@ export default function ProductsPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({
           isSoldOut: !product.isSoldOut,
@@ -49,11 +55,8 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        setProducts(prevProducts =>
-          prevProducts.map(p =>
-            p.id === productId ? { ...p, isSoldOut: !p.isSoldOut } : p
-          )
-        );
+        // 서버에서 최신 데이터를 가져옵니다
+        await fetchProducts();
       } else {
         console.error('Failed to update product:', await response.text());
       }
