@@ -58,12 +58,23 @@ export default function ProductManagement() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
 
       const data = await response.json();
-      return data.url;
+      
+      // Vercel 환경에서는 전체 URL이, 로컬에서는 상대 경로가 반환됨
+      if (data.url.startsWith('http')) {
+        return data.url;
+      } else {
+        // 로컬 환경에서는 상대 경로를 전체 URL로 변환
+        return window.location.origin + data.url;
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('이미지 업로드에 실패했습니다.');
       throw error;
     }
   };
