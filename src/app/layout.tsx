@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,11 +20,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 shadow-sm">
           <nav className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" className="text-xl font-bold">도우다 베이커리</a>
+            <Link href="/" className="text-xl font-bold">도우다 베이커리</Link>
             <div className="flex gap-6">
-              <a href="/#products" className="hover:text-gray-600 transition-colors">메뉴</a>
-              <a href="/#calendar" className="hover:text-gray-600 transition-colors">영업일정</a>
-              <a href="/#contact" className="hover:text-gray-600 transition-colors">오시는 길</a>
+              <Link href="/#products" className="hover:text-gray-600 transition-colors">메뉴</Link>
+              <Link href="/#calendar" className="hover:text-gray-600 transition-colors">영업일정</Link>
+              <Link href="/#contact" className="hover:text-gray-600 transition-colors">오시는 길</Link>
             </div>
           </nav>
         </header>

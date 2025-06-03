@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface Product {
@@ -17,20 +17,111 @@ export default function AdminPage() {
   const [holidays, setHolidays] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // 제품 목록 불러오기
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  };
+
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Implement product addition logic
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      // 이미지 업로드
+      const imageFile = formData.get('image') as File;
+      const imageFormData = new FormData();
+      imageFormData.append('file', imageFile);
+      
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: imageFormData,
+      });
+      
+      if (!uploadResponse.ok) throw new Error('Failed to upload image');
+      const { url: imageUrl } = await uploadResponse.json();
+      
+      // 제품 추가
+      const productData = {
+        name: formData.get('name'),
+        price: Number(formData.get('price')),
+        description: formData.get('description'),
+        image: imageUrl,
+        isSoldOut: false,
+      };
+      
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+      
+      if (response.ok) {
+        await fetchProducts(); // 목록 새로고침
+        e.currentTarget.reset(); // 폼 초기화
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error);
+    }
   };
 
   const handleToggleSoldOut = async (productId: string) => {
-    // TODO: Implement sold out toggle logic
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isSoldOut: !product.isSoldOut,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchProducts(); // 목록 새로고침
+      }
+    } catch (error) {
+      console.error('Failed to toggle sold out status:', error);
+    }
   };
 
   const handleAddHoliday = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (selectedDate) {
-      setHolidays([...holidays, selectedDate]);
-      setSelectedDate(null);
+      try {
+        const response = await fetch('/api/holidays', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            date: selectedDate.toISOString(),
+          }),
+        });
+
+        if (response.ok) {
+          setHolidays([...holidays, selectedDate]);
+          setSelectedDate(null);
+        }
+      } catch (error) {
+        console.error('Failed to add holiday:', error);
+      }
     }
   };
 

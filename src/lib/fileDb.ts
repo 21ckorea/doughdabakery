@@ -2,21 +2,25 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Holiday, HolidayInput } from '@/types/holiday';
 
+interface DbData {
+  holidays: Holiday[];
+}
+
 const DB_PATH = path.join(process.cwd(), 'src/data/holidays.json');
 
 // 데이터 읽기
-async function readDb() {
+async function readDb(): Promise<DbData> {
   try {
     const data = await fs.readFile(DB_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
+    return JSON.parse(data) as DbData;
+  } catch {
     // 파일이 없는 경우 기본 구조 반환
     return { holidays: [] };
   }
 }
 
 // 데이터 쓰기
-async function writeDb(data: any) {
+async function writeDb(data: DbData): Promise<void> {
   await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
 
