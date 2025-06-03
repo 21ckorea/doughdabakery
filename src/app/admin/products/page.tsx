@@ -49,7 +49,6 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        const updatedProduct = await response.json();
         setProducts(prevProducts =>
           prevProducts.map(p =>
             p.id === productId ? { ...p, isSoldOut: !p.isSoldOut } : p
