@@ -10,6 +10,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     
     try {
       const response = await fetch('/api/admin/login', {
@@ -18,13 +19,13 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
+        credentials: 'include',
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        router.push('/admin/products');
-        router.refresh();
+        window.location.href = '/admin/products';
       } else {
         setError(data.error || '비밀번호가 올바르지 않습니다.');
       }
