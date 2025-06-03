@@ -156,6 +156,30 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const productId = pathParts[pathParts.length - 1];
+    
+    const products = await getProducts();
+    const productIndex = products.findIndex(p => p.id === productId);
+    
+    if (productIndex === -1) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+    
+    const update = await request.json();
+    products[productIndex] = { ...products[productIndex], ...update };
+    
+    await saveProducts(products);
+    return NextResponse.json(products[productIndex]);
+  } catch (error) {
+    console.error('Failed to update product:', error);
+    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { id } = await request.json();

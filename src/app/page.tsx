@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Calendar from './components/Calendar';
 import ProductCard from './components/ProductCard';
@@ -14,48 +15,56 @@ const fadeInUp = {
   transition: { duration: 0.5 }
 };
 
+interface StoreStatus {
+  isOpen: boolean;
+  message: string;
+}
+
 export default function Home() {
-  const [isOpen, setIsOpen] = useState(true);
-  const [closedAt, setClosedAt] = useState<string | undefined>();
+  const [storeStatus, setStoreStatus] = useState<StoreStatus>({
+    isOpen: true,
+    message: '',
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
-    const fetchStoreStatus = async () => {
-      try {
-        const response = await fetch('/api/store/status');
-        const data = await response.json();
-        setIsOpen(data.isOpen);
-        setClosedAt(data.closedAt);
-      } catch (error) {
-        console.error('Failed to fetch store status:', error);
-      }
-    };
-
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products');
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
-      }
-    };
-
-    const fetchHolidays = async () => {
-      try {
-        const response = await fetch('/api/holidays');
-        const data: Holiday[] = await response.json();
-        setHolidays(data);
-      } catch (error) {
-        console.error('Failed to fetch holidays:', error);
-      }
-    };
-
     fetchStoreStatus();
     fetchProducts();
     fetchHolidays();
   }, []);
+
+  const fetchStoreStatus = async () => {
+    try {
+      const response = await fetch('/api/store');
+      if (response.ok) {
+        const data = await response.json();
+        setStoreStatus(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch store status:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products');
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  };
+
+  const fetchHolidays = async () => {
+    try {
+      const response = await fetch('/api/holidays');
+      const data: Holiday[] = await response.json();
+      setHolidays(data);
+    } catch (error) {
+      console.error('Failed to fetch holidays:', error);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white">
@@ -65,8 +74,7 @@ export default function Home() {
           src="/images/hero-bakery.jpg"
           alt="도우다 베이커리"
           fill
-          className="object-cover"
-          priority
+          className="object-cover brightness-50"
         />
         <div className="absolute inset-0 bg-black/40 z-10" />
         <motion.div
@@ -97,21 +105,19 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 1.1 }}
             className="space-y-2"
           >
-            {isOpen ? (
-              <span className="bg-green-500 px-6 py-3 rounded-full text-lg font-semibold">
-                영업중
-              </span>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <span className="bg-red-500 px-6 py-3 rounded-full text-lg font-semibold">
-                  금일 마감
-                </span>
-                {closedAt && (
-                  <span className="text-white text-sm">
-                    마감 시간: {closedAt}
-                  </span>
-                )}
-              </div>
+            <button
+              className={`px-6 py-3 rounded-full text-lg font-semibold ${
+                storeStatus.isOpen
+                  ? 'bg-green-500 hover:bg-green-600'
+                  : 'bg-red-500 hover:bg-red-600'
+              }`}
+            >
+              {storeStatus.isOpen ? '영업중' : '영업종료'}
+            </button>
+            {storeStatus.message && (
+              <p className="text-white text-center bg-black/50 px-4 py-2 rounded">
+                {storeStatus.message}
+              </p>
             )}
           </motion.div>
         </motion.div>

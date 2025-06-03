@@ -1,44 +1,45 @@
-import { ReactNode } from 'react';
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-interface AdminLayoutProps {
-  children: ReactNode;
-}
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+  const menus = [
+    { name: '상품 관리', path: '/admin/products' },
+    { name: '상품 등록/수정', path: '/admin/products/edit' },
+    { name: '영업 상태 관리', path: '/admin/store' },
+    { name: '휴일 관리', path: '/admin/holidays' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* 관리자 네비게이션 바 */}
-      <nav className="bg-white shadow-md">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/admin" className="text-xl font-bold text-gray-800">
-                관리자 페이지
-              </Link>
-            </div>
-            <div className="flex space-x-4">
+    <div>
+      <div className="border-b">
+        <div className="max-w-7xl mx-auto px-4">
+          <nav className="flex space-x-8">
+            {menus.map((menu) => (
               <Link
-                href="/admin/holidays"
-                className="text-gray-600 hover:text-gray-900"
+                key={menu.path}
+                href={menu.path}
+                className={`py-4 px-1 border-b-2 ${
+                  pathname === menu.path
+                    ? 'border-blue-500 text-blue-500'
+                    : 'border-transparent hover:border-gray-300'
+                }`}
               >
-                휴일 관리
+                {menu.name}
               </Link>
-              <Link
-                href="/"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                메인페이지
-              </Link>
-            </div>
-          </div>
+            ))}
+          </nav>
         </div>
-      </nav>
+      </div>
 
-      {/* 메인 콘텐츠 */}
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
+      <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
     </div>
   );
 } 
