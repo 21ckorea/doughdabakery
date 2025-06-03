@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getHolidays, addHoliday, deleteHoliday } from '@/lib/fileDb';
-import { HolidayInput } from '@/types/holiday';
 
 // GET: 휴일 목록 조회
 export async function GET() {
