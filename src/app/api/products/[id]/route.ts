@@ -74,9 +74,15 @@ async function saveProducts(products: Product[]) {
   }
 }
 
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
 export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
+  _request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
@@ -101,7 +107,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
@@ -133,8 +139,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
+  _request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
