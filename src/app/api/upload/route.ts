@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { writeFile } from 'fs/promises';
+import path from 'path';
 
 export async function POST(request: Request) {
   try {
@@ -16,18 +11,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // File을 base64로 변환
+    // 파일 데이터를 Buffer로 변환
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Cloudinary에 업로드
-    const result = await cloudinary.uploader.upload(base64File, {
-      folder: 'doughdabakery',
-    });
+    // 파일 이름에 타임스탬프 추가하여 유니크하게 만들기
+    const timestamp = Date.now();
+    const originalName = file.name;
+    const extension = path.extname(originalName);
+    const fileName = `${timestamp}-${path.basename(originalName, extension)}${extension}`;
+    
+    // 파일 저장 경로 설정
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const filePath = path.join(uploadDir, fileName);
+    
+    // 파일 저장
+    await writeFile(filePath, buffer);
+    
+    // 클라이언트에서 접근 가능한 URL 경로 반환
+    const fileUrl = `/uploads/${fileName}`;
     
     return NextResponse.json({ 
-      url: result.secure_url,
+      url: fileUrl,
       success: true 
     });
   } catch (error) {
