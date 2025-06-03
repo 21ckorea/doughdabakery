@@ -74,19 +74,13 @@ async function saveProducts(products: Product[]) {
   }
 }
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
 export async function GET(
-  _request: NextRequest,
-  context: RouteContext
+  req: NextRequest,
 ) {
   try {
+    const id = req.nextUrl.pathname.split('/').pop();
     const products = await getProducts();
-    const product = products.find(p => p.id === context.params.id);
+    const product = products.find(p => p.id === id);
 
     if (!product) {
       return NextResponse.json(
@@ -106,12 +100,12 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: NextRequest,
-  context: RouteContext
+  req: NextRequest,
 ) {
   try {
+    const id = req.nextUrl.pathname.split('/').pop();
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === id);
 
     if (productIndex === -1) {
       return NextResponse.json(
@@ -120,7 +114,7 @@ export async function PATCH(
       );
     }
 
-    const data = await request.json();
+    const data = await req.json();
     products[productIndex] = {
       ...products[productIndex],
       ...data,
@@ -139,12 +133,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  context: RouteContext
+  req: NextRequest,
 ) {
   try {
+    const id = req.nextUrl.pathname.split('/').pop();
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === id);
 
     if (productIndex === -1) {
       return NextResponse.json(
