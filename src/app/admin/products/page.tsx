@@ -141,7 +141,44 @@ export default function ProductManagement() {
     <div className="max-w-4xl mx-auto p-8">
       <h1 className="text-2xl font-bold mb-8">상품 관리</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 mb-8">
+      {/* 상품 목록 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {products.map((product) => (
+          <div key={product.id} className="bg-white rounded-lg shadow p-4">
+            <div className="relative h-48 w-full mb-4">
+              <Image
+                src={product.image || '/placeholder.jpg'}
+                alt={product.name}
+                fill
+                className="object-cover rounded-lg"
+              />
+            </div>
+            <h3 className="font-bold mb-2">{product.name}</h3>
+            <p className="text-gray-600 text-sm mb-2">{product.description}</p>
+            <p className="font-bold mb-4">{product.price.toLocaleString()}원</p>
+            <div className="flex justify-between">
+              <button
+                onClick={() => handleEdit(product)}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                수정
+              </button>
+              <button
+                onClick={() => handleDelete(product.id)}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 상품 추가/수정 폼 */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-6">
+          {editingProduct.id ? '상품 수정' : '새 상품 추가'}
+        </h2>
         <div className="grid grid-cols-1 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -203,79 +240,38 @@ export default function ProductManagement() {
             )}
           </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={editingProduct.isSoldOut}
-              onChange={(e) => setEditingProduct({ ...editingProduct, isSoldOut: e.target.checked })}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium text-gray-700">
-              품절
+          <div>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={editingProduct.isSoldOut}
+                onChange={(e) => setEditingProduct({ ...editingProduct, isSoldOut: e.target.checked })}
+                className="rounded"
+              />
+              <span className="text-sm font-medium text-gray-700">품절</span>
             </label>
           </div>
 
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={isUploading}
-              className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
-                isUploading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isUploading ? '업로드 중...' : editingProduct.id ? '수정' : '추가'}
-            </button>
+          <div className="flex justify-end space-x-4">
             {editingProduct.id && (
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
               >
                 취소
               </button>
             )}
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 disabled:bg-gray-400"
+            >
+              {isUploading ? '저장 중...' : editingProduct.id ? '수정' : '추가'}
+            </button>
           </div>
         </div>
       </form>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {products.map(product => (
-          <div key={product.id} className="bg-white rounded-lg shadow p-4">
-            <div className="relative h-48 w-full mb-4">
-              {product.image && (
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              )}
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-            <p className="text-gray-600 mb-2">{product.description}</p>
-            <p className="text-lg font-bold mb-2">{product.price.toLocaleString()}원</p>
-            {product.isSoldOut && (
-              <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm mb-2">
-                품절
-              </span>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(product)}
-                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200"
-              >
-                수정
-              </button>
-              <button
-                onClick={() => handleDelete(product.id)}
-                className="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200"
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 } 
