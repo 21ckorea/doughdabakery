@@ -172,7 +172,7 @@ export default function Home() {
         variants={fadeInUp}
         id="contact"
         className="py-16 px-4 max-w-7xl mx-auto"
-        >
+      >
         <motion.h2
           variants={fadeInUp}
           className="text-3xl font-bold text-center mb-12"
@@ -183,7 +183,7 @@ export default function Home() {
           <motion.div
             variants={fadeInUp}
             className="space-y-4"
-        >
+          >
             <h3 className="text-xl font-semibold">영업 시간</h3>
             <p>화요일 - 일요일: 10:00 AM - 8:00 PM</p>
             <p>월요일: 휴무</p>
@@ -192,13 +192,13 @@ export default function Home() {
           <motion.div
             variants={fadeInUp}
             className="space-y-4"
-        >
+          >
             <h3 className="text-xl font-semibold">연락처</h3>
             <p>주소: [베이커리 주소]</p>
             <p>전화: [전화번호]</p>
             <p>이메일: [이메일]</p>
           </motion.div>
-    </div>
+        </div>
       </motion.section>
     </main>
   );

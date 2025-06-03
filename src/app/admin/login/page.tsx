@@ -21,7 +21,6 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // 강제로 페이지 새로고침
         window.location.href = '/admin';
       } else {
         setError(data.error || '비밀번호가 올바르지 않습니다.');
