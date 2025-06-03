@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getProducts, saveProducts } from '@/lib/productUtils';
+import { getProduct, updateProduct, deleteProduct } from '@/lib/productUtils';
 
 // 개별 상품 조회
 export async function GET(
@@ -13,8 +13,7 @@ export async function GET(
     const { id } = await params;
     console.log('Getting product with ID:', id);
 
-    const products = await getProducts();
-    const product = products.find(p => p.id === id);
+    const product = await getProduct(id);
 
     if (!product) {
       return NextResponse.json(
@@ -49,29 +48,16 @@ export async function PATCH(
     const data = await request.json();
     console.log('Updating product with ID:', id, 'Data:', data);
 
-    const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === id);
+    const updatedProduct = await updateProduct(id, data);
 
-    if (productIndex === -1) {
+    if (!updatedProduct) {
       return NextResponse.json(
         { error: '상품을 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
 
-    // 메모리에서 상품 정보 업데이트
-    const updatedProductInMem = {
-      ...products[productIndex],
-      ...data,
-    };
-    products[productIndex] = updatedProductInMem;
-
-    // 변경된 전체 상품 목록 저장
-    await saveProducts(products);
-    
-    console.log('Product saved. Returning in-memory updated product:', updatedProductInMem);
-
-    return NextResponse.json(updatedProductInMem, {
+    return NextResponse.json(updatedProduct, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',
@@ -96,34 +82,30 @@ export async function DELETE(
     const { id } = await params;
     console.log('Deleting product with ID:', id);
 
-    const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === id);
-
-    if (productIndex === -1) {
+    const product = await getProduct(id);
+    if (!product) {
       return NextResponse.json(
         { error: '상품을 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
 
-    const productToDelete = products[productIndex];
-
     // 이미지 삭제 처리
-    if (productToDelete.image) {
+    if (product.image) {
       if (process.env.VERCEL) {
         // Vercel 환경: Blob Storage에서 이미지 삭제
         try {
-          if (productToDelete.image.includes('blob.vercel-storage.com')) {
-            await del(productToDelete.image);
-            console.log('Image deleted from Blob Storage:', productToDelete.image);
+          if (product.image.includes('blob.vercel-storage.com')) {
+            await del(product.image);
+            console.log('Image deleted from Blob Storage:', product.image);
           }
         } catch (error) {
           console.error('Failed to delete image from blob storage:', error);
         }
       } else {
         // 로컬 환경: 파일 시스템에서 이미지 삭제
-        if (productToDelete.image.startsWith('/uploads/')) {
-          const imagePath = path.join(process.cwd(), 'public', productToDelete.image);
+        if (product.image.startsWith('/uploads/')) {
+          const imagePath = path.join(process.cwd(), 'public', product.image);
           try {
             await fs.unlink(imagePath);
             console.log('Local image file deleted:', imagePath);
@@ -134,8 +116,13 @@ export async function DELETE(
       }
     }
 
-    products.splice(productIndex, 1);
-    await saveProducts(products);
+    const success = await deleteProduct(id);
+    if (!success) {
+      return NextResponse.json(
+        { error: '상품 삭제에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true }, {
       headers: {

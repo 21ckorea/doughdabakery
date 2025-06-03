@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Product } from '@/types/product';
-import { getProducts, saveProducts } from '@/lib/productUtils';
+import { getProducts, saveProducts, addProduct } from '@/lib/productUtils';
 
 // 상품 목록 조회
 export async function GET() {
@@ -22,25 +21,23 @@ export async function GET() {
   }
 }
 
-// 새 상품 추가
+// 상품 등록
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const products = await getProducts();
+    const productData = await request.json();
+    const newProduct = await addProduct(productData);
     
-    const newProduct: Product = {
-      ...data,
-      id: Date.now().toString(),
-    };
-
-    products.push(newProduct);
-    await saveProducts(products);
-
-    return NextResponse.json(newProduct);
+    return NextResponse.json(newProduct, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to create product:', error);
     return NextResponse.json(
-      { error: '상품 생성 중 오류가 발생했습니다.' },
+      { error: '상품 등록 중 오류가 발생했습니다.' },
       { status: 500 }
     );
   }
@@ -111,7 +108,13 @@ export async function DELETE(request: NextRequest) {
     products.splice(productIndex, 1);
     await saveProducts(products);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to delete product:', error);
     return NextResponse.json(
