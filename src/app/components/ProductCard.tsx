@@ -15,19 +15,14 @@ export default function ProductCard(props: Product) {
           />
         )}
         {props.isSoldOut && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white text-lg font-bold">품절</span>
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <span className="text-red-500 text-2xl font-bold bg-white/80 px-4 py-2 rounded-lg">품절</span>
           </div>
         )}
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold">{props.name}</h3>
-          {props.isSoldOut && (
-            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-              품절
-            </span>
-          )}
         </div>
         <p className="text-gray-600 text-sm mb-2">{props.description}</p>
         <p className="text-lg font-bold">{props.price.toLocaleString()}원</p>
