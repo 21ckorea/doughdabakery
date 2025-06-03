@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Product } from '@/types/product';
 import { put, list } from '@vercel/blob';
 import { promises as fs } from 'fs';
@@ -74,13 +74,19 @@ async function saveProducts(products: Product[]) {
   }
 }
 
+type RouteContext = {
+  params: {
+    id: string;
+  };
+};
+
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const product = products.find(p => p.id === params.id);
+    const product = products.find(p => p.id === context.params.id);
 
     if (!product) {
       return NextResponse.json(
@@ -100,12 +106,12 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === params.id);
+    const productIndex = products.findIndex(p => p.id === context.params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(
@@ -133,12 +139,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === params.id);
+    const productIndex = products.findIndex(p => p.id === context.params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(
