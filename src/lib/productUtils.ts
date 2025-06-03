@@ -50,12 +50,20 @@ export async function addProduct(product: Product): Promise<Product> {
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
   try {
-    const products = await getProducts();
-    const index = products.findIndex(p => p.id === id);
+    const productsJson = await redis.get(PRODUCTS_KEY);
+    const products: Product[] = productsJson ? JSON.parse(productsJson) : [];
+    const index = products.findIndex((p: Product) => p.id === id);
+    
     if (index === -1) return null;
-
-    products[index] = { ...products[index], ...updates };
-    await saveProducts(products);
+    
+    // 기존 제품 정보를 유지하면서 업데이트
+    products[index] = {
+      ...products[index],  // 기존 제품 정보 유지
+      ...updates,         // 새로운 정보로 업데이트
+      id                  // 원래 ID 유지
+    };
+    
+    await redis.set(PRODUCTS_KEY, JSON.stringify(products));
     return products[index];
   } catch (error) {
     console.error('Failed to update product in Redis:', error);
