@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-
-// Vercel Blob Storage import
 import { put } from '@vercel/blob';
 
 export async function POST(request: Request) {
@@ -20,15 +18,26 @@ export async function POST(request: Request) {
 
     // Vercel 환경인지 확인
     if (process.env.VERCEL) {
-      // Vercel Blob Storage 사용
-      const blob = await put(filename, file, {
-        access: 'public',
-      });
+      try {
+        // Vercel Blob Storage 사용
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        const blob = await put(filename, buffer, {
+          access: 'public',
+          contentType: file.type
+        });
 
-      return NextResponse.json({ 
-        url: blob.url,
-        success: true 
-      });
+        console.log('Blob upload success:', blob);
+
+        return NextResponse.json({ 
+          url: blob.url,
+          success: true 
+        });
+      } catch (error) {
+        console.error('Blob upload error:', error);
+        throw error;
+      }
     } else {
       // 로컬 환경에서는 파일 시스템 사용
       const bytes = await file.arrayBuffer();
@@ -53,6 +62,9 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error('Error uploading file:', err);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to upload file',
+      details: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 
