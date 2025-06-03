@@ -74,13 +74,15 @@ async function saveProducts(products: Product[]) {
   }
 }
 
+type Params = { id: string };
+
 export async function GET(
-  _request: NextRequest,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Params }
 ) {
   try {
     const products = await getProducts();
-    const product = products.find(p => p.id === context.params.id);
+    const product = products.find(p => p.id === params.id);
 
     if (!product) {
       return NextResponse.json(
@@ -101,11 +103,11 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Params }
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(
@@ -133,12 +135,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Params }
 ) {
   try {
     const products = await getProducts();
-    const productIndex = products.findIndex(p => p.id === context.params.id);
+    const productIndex = products.findIndex(p => p.id === params.id);
 
     if (productIndex === -1) {
       return NextResponse.json(
