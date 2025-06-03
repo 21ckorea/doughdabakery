@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,7 +23,8 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        window.location.href = '/admin';
+        router.push('/admin/products');
+        router.refresh();
       } else {
         setError(data.error || '비밀번호가 올바르지 않습니다.');
       }
