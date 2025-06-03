@@ -3,6 +3,7 @@ import { Product } from '@/types/product';
 import { put, list, del } from '@vercel/blob';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { getProducts, saveProducts } from '../route';
 
 const dataFilePath = path.join(process.cwd(), 'src/data/products.json');
 
@@ -81,11 +82,21 @@ async function saveProducts(products: Product[]) {
   }
 }
 
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
+// 개별 상품 조회
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
-    const id = req.nextUrl.pathname.split('/').pop();
+    const { id } = context.params;
+    console.log('Getting product with ID:', id); // 디버깅용 로그
+
     const products = await getProducts();
     const product = products.find(p => p.id === id);
 
@@ -96,21 +107,32 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json(product, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to get product:', error);
     return NextResponse.json(
-      { error: '상품 조회 중 오류가 발생했습니다.' },
+      { error: '상품을 가져오는 중 오류가 발생했습니다.' },
       { status: 500 }
     );
   }
 }
 
+// 상품 수정
 export async function PATCH(
-  req: NextRequest,
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
-    const id = req.nextUrl.pathname.split('/').pop();
+    const { id } = context.params;
+    const data = await request.json();
+    console.log('Updating product with ID:', id, 'Data:', data); // 디버깅용 로그
+
     const products = await getProducts();
     const productIndex = products.findIndex(p => p.id === id);
 
@@ -121,15 +143,29 @@ export async function PATCH(
       );
     }
 
-    const data = await req.json();
     products[productIndex] = {
       ...products[productIndex],
       ...data,
     };
 
     await saveProducts(products);
+    
+    // 데이터 동기화를 위한 짧은 지연
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // 저장 후 즉시 다시 조회하여 검증
+    const updatedProducts = await getProducts();
+    const updatedProduct = updatedProducts.find(p => p.id === id);
+    
+    console.log('Updated product:', updatedProduct); // 디버깅용 로그
 
-    return NextResponse.json(products[productIndex]);
+    return NextResponse.json(updatedProduct, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Failed to update product:', error);
     return NextResponse.json(
@@ -139,11 +175,15 @@ export async function PATCH(
   }
 }
 
+// 상품 삭제
 export async function DELETE(
-  req: NextRequest,
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
-    const id = req.nextUrl.pathname.split('/').pop();
+    const { id } = context.params;
+    console.log('Deleting product with ID:', id); // 디버깅용 로그
+
     const products = await getProducts();
     const productIndex = products.findIndex(p => p.id === id);
 
